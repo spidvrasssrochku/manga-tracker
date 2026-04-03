@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Мониторинг Манги</title>
+    <!-- Подключаем библиотеку Supabase -->
+    <script src="https://jsdelivr.net"></script>
+</head>
+<body>
+    <h1>Список обновлений манги</h1>
+    <div id="manga-list">Загрузка...</div>
+
+    <script>
+        // Данные из настроек твоего проекта Supabase (Settings -> API)
+        const SUPABASE_URL = 'ТВОЙ_URL'
+        const SUPABASE_KEY = 'ТВОЙ_ANON_KEY'
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+        async function getManga() {
+            const { data, error } = await supabase
+                .from('manga_list') // Название твоей таблицы
+                .select('*')
+                .order('created_at', { ascending: false })
+
+            if (error) return console.error(error)
+            
+            const listDiv = document.getElementById('manga-list')
+            listDiv.innerHTML = data.map(item => `
+                <p><strong>${item.title}</strong> — гл. ${item.chapter} [${item.status}]</p>
+            `).join('')
+        }
+
+        getManga()
+    </script>
+</body>
+</html>
