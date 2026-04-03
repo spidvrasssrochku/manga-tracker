@@ -1,35 +1,71 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мониторинг Манги</title>
-    <!-- Подключаем библиотеку Supabase -->
-    <script src="https://jsdelivr.net"></script>
+    <!-- Подключаем библиотеку Supabase через надежный источник -->
+    <script src="https://unpkg.com"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        h1 { color: #333; }
+        .manga-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .chapter { font-weight: bold; color: #007bff; }
+        .error { color: red; background: #fee; padding: 10px; border-radius: 5px; }
+    </style>
 </head>
 <body>
+
     <h1>Список обновлений манги</h1>
-    <div id="manga-list">Загрузка...</div>
+    <div id="manga-list">Загрузка данных...</div>
 
     <script>
-        // Данные из настроек твоего проекта Supabase (Settings -> API)
-        const SUPABASE_URL = 'https://dkwfuadhilfmozkahogb.supabase.co'
-        const SUPABASE_KEY = 'sb_publishable_3qbIyYWg6zMOSjVgfV7uHA_OahG-PXI'
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+        // 1. Вставь сюда свои данные из Supabase (Settings -> API)
+        const S_URL = 'ВАШ_SUPABASE_URL';
+        const S_KEY = 'ВАШ_SUPABASE_ANON_KEY';
 
-        async function getManga() {
-            const { data, error } = await supabase
-                .from('manga_list') // Название твоей таблицы
-                .select('*')
-                .order('created_at', { ascending: false })
+        // Инициализируем клиент с уникальным именем переменной, чтобы избежать ошибки в консоли
+        const _supabase = supabase.createClient(S_URL, S_KEY);
 
-            if (error) return console.error(error)
-            
-            const listDiv = document.getElementById('manga-list')
-            listDiv.innerHTML = data.map(item => `
-                <p><strong>${item.title}</strong> — гл. ${item.chapter} [${item.status}]</p>
-            `).join('')
+        async function loadManga() {
+            const listDiv = document.getElementById('manga-list');
+
+            try {
+                // 2. Делаем запрос к твоей таблице (проверь, что название совпадает)
+                const { data, error } = await _supabase
+                    .from('manga_list') 
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    listDiv.innerHTML = "Список пока пуст. Отправь данные со своего ПК!";
+                    return;
+                }
+
+                // 3. Выводим данные на страницу
+                listDiv.innerHTML = data.map(item => `
+                    <div class="manga-item">
+                        <strong>${item.title}</strong> — 
+                        <span class="chapter">гл. ${item.chapter}</span> 
+                        <em>(${new Date(item.created_at).toLocaleString()})</em>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error("Ошибка при загрузке:", err);
+                listDiv.innerHTML = `<div class="error">
+                    <b>Ошибка доступа к БД!</b><br>
+                    Проверь: <br>
+                    1. Правильность URL и KEY в коде.<br>
+                    2. Включен ли RLS (разрешение на SELECT) в Supabase.
+                </div>`;
+            }
         }
 
-        getManga()
+        // Запускаем загрузку
+        loadManga();
     </script>
 </body>
 </html>
